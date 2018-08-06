@@ -15,7 +15,6 @@
 
 using System;
 using System.Linq;
-using com.fxcm.messaging.util.web;
 using NodaTime;
 using NUnit.Framework;
 using QuantConnect.Securities;
@@ -140,6 +139,30 @@ namespace QuantConnect.Tests.Common
             var interval = TimeSpan.FromSeconds(1);
             var expected = TimeSpan.FromSeconds(5);
             var actual = interval.Multiply(5d);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        public void GetEndTimeForTradeBarsWithDailyBarSizeCountsMarketOpenDates()
+        {
+            var barSize = Time.OneDay;
+            var barCount = 20;
+            var startTime = new DateTime(2013, 10, 07, 9, 31, 0);
+            var expected = new DateTime(2013, 11, 04, 9, 31, 0);
+            var exchangeHours = MarketHoursDatabase.FromDataFolder().GetExchangeHours(Market.USA, Symbols.SPY, SecurityType.Equity);
+            var actual = Time.GetEndTimeForTradeBars(exchangeHours, startTime, barSize, barCount, false);
+            Assert.AreEqual(expected, actual);
+        }
+
+        [Test]
+        [TestCase("2013-10-07T09:31:00", Resolution.Daily, 20, "2013-11-04T09:31:00")]
+        public void GetEndTimeForTradeBars(string startString, Resolution barSizeResolution, int barCount, string expectedString)
+        {
+            var start = DateTime.Parse(startString);
+            var barSize = barSizeResolution.ToTimeSpan();
+            var expected = DateTime.Parse(expectedString);
+            var exchangeHours = MarketHoursDatabase.FromDataFolder().GetExchangeHours(Market.USA, Symbols.SPY, SecurityType.Equity);
+            var actual = Time.GetEndTimeForTradeBars(exchangeHours, start, barSize, barCount, false);
             Assert.AreEqual(expected, actual);
         }
     }
